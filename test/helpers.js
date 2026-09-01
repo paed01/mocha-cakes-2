@@ -1,11 +1,13 @@
 'use strict';
 
-var Mocha = require('mocha');
-var Promise = require('bluebird');
-var execFile = Promise.promisify(require('child_process').execFile);
+var Mocha = require('mocha').Mocha;
+var execFile = require('util').promisify(require('child_process').execFile);
 var path = require('path');
 
 var testEnv = Object.assign({}, process.env, { NODE_PATH: __dirname });
+// Run mocha's CLI with the same node binary as this process so it works
+// outside npm scripts (where node_modules/.bin is not on PATH).
+var mochaBin = require.resolve('mocha/bin/mocha.js');
 
 var defaultOpts = {
   reporter: 'spec'
@@ -17,12 +19,17 @@ var interfaces = {
   cli: function(file, opts) {
     opts = Object.assign({}, defaultOpts, opts);
     var args = [
+      '--no-config',
+      '--require', path.join(__dirname, 'setup.js'),
       '--require', path.join(__dirname, '../mocha-cakes.js'),
-      '--ui', 'mocha-cakes',
+      '--ui', 'mocha-cakes-2',
       '--reporter', opts.reporter,
       path.join(__dirname, file)
     ];
-    return execFile('mocha', args, { env: testEnv });
+    return execFile(process.execPath, [mochaBin].concat(args), { env: testEnv })
+      .then(function (result) {
+        return result.stdout;
+      });
   },
 
   api: function(file, opts) {
@@ -40,15 +47,20 @@ var interfaces = {
         // in the CLI output since the colors are formatted and won't appear in the
         // strings, so we disable colors here so we don't have to strip them from
         // the output, and we can use the same test assertions with both interfaces.
-        useColors: false
+        color: false
       });
 
       mocha.addFile(path.join(__dirname, file));
 
-      // Override console.log() so we can get the output from the reporter.
+      // Capture the reporter output. Mocha's reporters write through
+      // `Base.consoleLog` (a reference to console.log taken at load time),
+      // while the sample test files log through console.log directly, so
+      // both are intercepted to preserve the relative ordering.
       var logs = [];
-      var originalLog = console.log
-      console.log = function() {
+      var Base = Mocha.reporters.Base;
+      var originalLog = console.log;
+      var originalBaseLog = Base.consoleLog;
+      var captureLog = function() {
         var args = Array.prototype.slice.call(arguments);
         if (args.length < 2) {
           logs.push(args[0] || '');
@@ -61,20 +73,33 @@ var interfaces = {
           });
           logs.push(str);
         }
-      }
+      };
+      console.log = captureLog;
+      Base.consoleLog = captureLog;
 
-      // Mocha.run() will store the 'useColors' option internally, outside of the
+      // Mocha.run() will store the 'color' option internally, outside of the
       // options we've set for this instance, so if the Mocha instance that's
-      // running this has a different 'useColors' value it won't be restored.
-      var previousUseColors = Mocha.reporters.Base.useColors;
+      // running this has a different 'color' value it won't be restored.
+      var previousUseColors = Base.useColors;
 
       mocha.run(function() {
         console.log = originalLog;
-        Mocha.reporters.Base.useColors = previousUseColors;
+        Base.consoleLog = originalBaseLog;
+        Base.useColors = previousUseColors;
         resolve(logs.join('\n'));
       });
     });
   }
+}
+
+// Mocha colors its pass/fail symbols at load time (based on whether stdout is
+// a TTY), independently of the `color` option, so the captured output may
+// contain ANSI escape codes when run from a terminal. Strip them so the
+// assertions can match plain text regardless of where the tests are run.
+var ansiRegexp = /\u001b\[[0-9;]*m/g;
+
+function stripAnsi(str) {
+  return str.replace(ansiRegexp, '');
 }
 
 function execTestFile(file, opts) {
@@ -85,7 +110,7 @@ function execTestFile(file, opts) {
     var valid = Object.keys(interfaces).join(', ');
     throw new Error('The MOCHA_INTERFACE environment variable is set to ' + actual + ', valid values are: ' + valid);
   }
-  return func(file, opts);
+  return func(file, opts).then(stripAnsi);
 }
 
 module.exports = {

@@ -1,8 +1,8 @@
 'use strict';
 
-var Mocha = require('mocha'),
-    Suite = require('mocha/lib/suite'),
-    Test  = require('mocha/lib/test');
+var Mocha = unwrap(require('mocha')),
+    Test  = Mocha.Test,
+    createCommon = loadCommon();
 
 Mocha.interfaces['mocha-cakes-2'] = module.exports = mochaCakes;
 
@@ -20,12 +20,12 @@ function mochaCakes(suite) {
   }
 
   suite.on('pre-require', function (context, file, mocha) {
-    var common = require('mocha/lib/interfaces/common')(suites, context, mocha);
+    var common = createCommon(suites, context, mocha);
 
     context.run = mocha.options.delay && common.runWithSuite(suite);
 
-    var wrapperCreator = createWrapper(file, suites, context, mocha);
-    var testTypeCreator = createTestType(file, suites, mocha);
+    var wrapperCreator = createWrapper(file, suites, common);
+    var testTypeCreator = createTestType(file, suites, common, mocha);
 
     context.after = common.after;
     context.afterEach = common.afterEach;
@@ -60,19 +60,22 @@ function mochaCakes(suite) {
   });
 }
 
+// Required for `--list-interfaces`
+mochaCakes.description = 'Gherkin/Cucumber style (Feature, Scenario, Given, When, Then)';
+
 /**
  *  Helper functions
  **/
 
-function createTestType(file, suites, mocha) {
+function createTestType(file, suites, common, mocha) {
   return function testTypeCreator(type) {
     function testType(title, fn) {
-      var suite, test;
+      var suite = suites[0];
       var testName = type ? type + ' ' + title : title;
 
-      suite = suites[0];
-      if (suite.pending) fn = null;
-      test = new Test(testName, fn);
+      if (suite.isPending()) fn = null;
+
+      var test = new Test(testName, fn);
       test.file = file;
       suite.addTest(test);
 
@@ -80,19 +83,18 @@ function createTestType(file, suites, mocha) {
     }
 
     testType.skip = function skip(title) {
-      testType(title);
+      return testType(title);
     };
 
     testType.only = function only(title, fn) {
-      var test = testType(title, fn);
-      mocha.grep(test.fullTitle());
+      return common.test.only(mocha, testType(title, fn));
     };
 
     return testType;
   };
 }
 
-function createWrapper(file, suites, context, mocha) {
+function createWrapper(file, suites, common) {
   return function wrapperCreator(type) {
     function createLabel(title) {
       if (!type) return title;
@@ -101,12 +103,11 @@ function createWrapper(file, suites, context, mocha) {
     }
 
     function wrapper(title, fn) {
-      var suite = Suite.create(suites[0], createLabel(title));
-
-      suite.file = file;
-      suites.unshift(suite);
-      fn.call(suite);
-      suites.shift();
+      var suite = common.suite.create({
+        title: createLabel(title),
+        file: file,
+        fn: fn
+      });
 
       applyRegisteredHooks(suite, type);
 
@@ -114,17 +115,23 @@ function createWrapper(file, suites, context, mocha) {
     }
 
     wrapper.skip = function skip(title, fn) {
-      var suite = Suite.create(suites[0], createLabel(title));
-
-      suite.pending = true;
-      suites.unshift(suite);
-      fn.call(suite);
-      suites.shift();
+      return common.suite.skip({
+        title: createLabel(title),
+        file: file,
+        fn: fn
+      });
     };
 
     wrapper.only = function only(title, fn) {
-      var suite = wrapper(title, fn);
-      mocha.grep(suite.fullTitle());
+      var suite = common.suite.only({
+        title: createLabel(title),
+        file: file,
+        fn: fn
+      });
+
+      applyRegisteredHooks(suite, type);
+
+      return suite;
     };
 
     return wrapper;
@@ -157,4 +164,28 @@ function getRegisteredHooks(suite, hookType, suiteType) {
   });
 
   return hooks;
+}
+
+/**
+ * From mocha 12 the package entry point is an ES module. On Node 20/22
+ * `require('mocha')` then returns the module namespace, where the Mocha
+ * constructor is the default export; Node 24+ unwraps it automatically.
+ */
+function unwrap(mod) {
+  return mod && typeof mod.default === 'function' ? mod.default : mod;
+}
+
+/**
+ * Mocha's shared interface helpers live in `mocha/lib/interfaces/common`.
+ * Up to mocha 11 the module is CommonJS and exports the factory function directly,
+ * from mocha 12 it is an ES module exporting `createCommon`.
+ */
+function loadCommon() {
+  var common = require('mocha/lib/interfaces/common');
+
+  if (typeof common === 'function') return common;
+  if (common && typeof common.createCommon === 'function') return common.createCommon;
+  if (common && typeof common.default === 'function') return common.default;
+
+  throw new Error('mocha-cakes-2: unable to load mocha/lib/interfaces/common from the installed mocha version');
 }

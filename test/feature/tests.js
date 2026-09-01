@@ -24,23 +24,23 @@ describe('Mocha Cakes', function () {
     });
 
     it('should have the correct `Given` clause', function () {
-      output.should.contain('✓ Given that 1 + 1 is 2');
+      output.should.contain('✔ Given that 1 + 1 is 2');
     });
 
     it('should have the correct `And` clause', function () {
-      output.should.contain('✓ And 2 + 2 is 4');
+      output.should.contain('✔ And 2 + 2 is 4');
     });
 
     it('should have the correct `But` clause', function () {
-      output.should.contain('✓ But 2 + 3 is not 4');
+      output.should.contain('✔ But 2 + 3 is not 4');
     });
 
     it('should have the correct `When` clause', function () {
-      output.should.contain('✓ When something is true');
+      output.should.contain('✔ When something is true');
     });
 
     it('should have the correct `Then` clause', function () {
-      output.should.contain('✓ Then everything should be ok');
+      output.should.contain('✔ Then everything should be ok');
     });
   });
 
@@ -88,11 +88,11 @@ describe('Mocha Cakes', function () {
       var expected = [
         'Feature: Mocha Cakes',
         'Scenario: Exclusive Scenario',
-        '✓ Given test 1',
-        '✓ And test 2',
-        '✓ But test 3',
-        '✓ When test 4',
-        '✓ Then test 5'
+        '✔ Given test 1',
+        '✔ And test 2',
+        '✔ But test 3',
+        '✔ When test 4',
+        '✔ Then test 5'
       ];
       const formatted = output.trim().split('\n').map(function (s) {
         return s.trim();
@@ -117,7 +117,7 @@ describe('Mocha Cakes', function () {
     it('should only run the specified test', function () {
       output.should.contain('Feature: Mocha Cakes');
       output.should.contain('Scenario: Exclusive test');
-      output.should.contain('✓ Given test 1');
+      output.should.contain('✔ Given test 1');
       output.should.contain('1 passing');
     });
   });
@@ -264,23 +264,23 @@ describe('Mocha Cakes', function () {
     });
 
     it('should have the correct `given` clause', function () {
-      output.should.contain('✓ Given that 1 + 1 is 2');
+      output.should.contain('✔ Given that 1 + 1 is 2');
     });
 
     it('should have the correct `and` clause', function () {
-      output.should.contain('✓ And 2 + 2 is 4');
+      output.should.contain('✔ And 2 + 2 is 4');
     });
 
     it('should have the correct `but` clause', function () {
-      output.should.contain('✓ But 2 + 3 is not 4');
+      output.should.contain('✔ But 2 + 3 is not 4');
     });
 
     it('should have the correct `when` clause', function () {
-      output.should.contain('✓ When something is true');
+      output.should.contain('✔ When something is true');
     });
 
     it('should have the correct `then` clause', function () {
-      output.should.contain('✓ Then everything should be ok');
+      output.should.contain('✔ Then everything should be ok');
     });
   });
 
@@ -295,15 +295,15 @@ describe('Mocha Cakes', function () {
     });
 
     it('should work', function () {
-      output.should.contain('✓ should work');
+      output.should.contain('✔ should work');
     });
 
     it('should also work', function () {
-      output.should.contain('✓ should also work');
+      output.should.contain('✔ should also work');
     });
 
     it('should always work', function () {
-      output.should.contain('✓ should always work');
+      output.should.contain('✔ should always work');
     });
 
     it('should execute the outer before clause', function () {

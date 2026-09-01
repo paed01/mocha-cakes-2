@@ -1,7 +1,8 @@
 'use strict';
 
-var Mocha = require('mocha');
+var Mocha = require('mocha').Mocha;
 var chai = require('chai');
+var path = require('path');
 
 require('../mocha-cakes');
 
@@ -12,7 +13,7 @@ var mocha = new Mocha({
   reporter: 'spec'
 });
 
-mocha.addFile('test/feature/tests.js');
+mocha.addFile(path.join(__dirname, 'feature/tests.js'));
 
 mocha.run(function(failureCount) {
   process.on("exit", function() {

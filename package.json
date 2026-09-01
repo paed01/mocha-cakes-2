@@ -6,9 +6,9 @@
   "typings": "./mocha-cakes.d.ts",
   "scripts": {
     "test": "npm run test:cli && npm run test:api",
-    "test:cli": "MOCHA_INTERFACE=cli mocha ./test/**/*tests.js",
+    "test:cli": "MOCHA_INTERFACE=cli mocha",
     "test:api": "MOCHA_INTERFACE=api node ./test/run-api.js",
-    "test:watch": "mocha ./test/**/*tests.js --watch -R dot"
+    "test:watch": "mocha --watch -R dot"
   },
   "repository": {
     "type": "git",
@@ -32,7 +32,7 @@
     "url": "https://github.com/iensu/mocha-cakes-2/issues"
   },
   "engines": {
-    "node": ">= 4.0.0"
+    "node": "^20.19.0 || >=22.12.0"
   },
   "files": [
     "mocha-cakes.js",
@@ -45,8 +45,7 @@
     "mocha": ">= 4"
   },
   "devDependencies": {
-    "bluebird": "^3.5.1",
-    "chai": "^4.1.2",
-    "mocha": "^4.0.1"
+    "chai": "^6.2.2",
+    "mocha": "^12.0.0"
   }
 }

@@ -1,7 +1,13 @@
+interface MochaCakesSuiteFn {
+  (description: string, suiteFn: Function): any;
+  only(description: string, suiteFn: Function): any;
+  skip(description: string, suiteFn: Function): any;
+}
+
 interface MochaCakesTestFn {
-  (description: string, testFn: Function): any;
+  (description: string, testFn?: Function): any;
   only(description: string, testFn: Function): any;
-  skip(description: string, testFn: Function): any;
+  skip(description: string, testFn?: Function): any;
 }
 
 interface MochaCakesDone {
@@ -17,16 +23,16 @@ interface MochaCakesHook {
   (description: string, callback: MochaCakesHookCallback): void;
 }
 
-declare var Feature: MochaCakesTestFn;
-declare var Scenario: MochaCakesTestFn;
+declare var Feature: MochaCakesSuiteFn;
+declare var Scenario: MochaCakesSuiteFn;
 declare var Given: MochaCakesTestFn;
 declare var And: MochaCakesTestFn;
 declare var When: MochaCakesTestFn;
 declare var Then: MochaCakesTestFn;
 declare var But: MochaCakesTestFn;
 
-declare var feature: MochaCakesTestFn;
-declare var scenario: MochaCakesTestFn;
+declare var feature: MochaCakesSuiteFn;
+declare var scenario: MochaCakesSuiteFn;
 declare var given: MochaCakesTestFn;
 declare var and: MochaCakesTestFn;
 declare var when: MochaCakesTestFn;
