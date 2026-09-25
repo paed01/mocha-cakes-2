@@ -1,6 +1,8 @@
 'use strict';
 
-var Mocha = require('mocha').Mocha;
+// mocha 12 exposes a named `Mocha` export, earlier versions export the constructor itself
+var mochaModule = require('mocha');
+var Mocha = mochaModule.Mocha || mochaModule;
 var execFile = require('util').promisify(require('child_process').execFile);
 var path = require('path');
 
